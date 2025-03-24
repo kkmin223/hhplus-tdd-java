@@ -4,6 +4,7 @@ import io.hhplus.tdd.config.PointLimit;
 import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
 import io.hhplus.tdd.dto.point.ChargeUserPointRequestDto;
+import io.hhplus.tdd.dto.point.UseUserPointRequestDto;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -48,5 +49,20 @@ public class PointService {
         UserPoint userPoint = userPointTable.selectById(id);
 
         return userPoint;
+    }
+
+    public UserPoint useUserPoint(UseUserPointRequestDto request) {
+
+        UserPoint userPoint = userPointTable.selectById(request.getId());
+
+        if (userPoint.point() - request.getAmount() < pointLimit.min()) {
+            throw new RuntimeException("잔액이 충분하지 않습니다.");
+        }
+
+        UserPoint updatedUserPoint = userPointTable.insertOrUpdate(request.getId(), userPoint.point() - request.getAmount());
+
+        pointHistoryTable.insert(request.getId(), request.getAmount(), TransactionType.CHARGE, updatedUserPoint.updateMillis());
+
+        return updatedUserPoint;
     }
 }

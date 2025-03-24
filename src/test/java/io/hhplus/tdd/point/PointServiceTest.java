@@ -4,6 +4,7 @@ import io.hhplus.tdd.config.PointLimit;
 import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
 import io.hhplus.tdd.dto.point.ChargeUserPointRequestDto;
+import io.hhplus.tdd.dto.point.UseUserPointRequestDto;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -148,5 +149,50 @@ class PointServiceTest {
 
         assertThat(runtimeException.getMessage())
             .isEqualTo("유효하지 않은 유저입니다.");
+    }
+
+    @Test
+    void 포인트를_사용한다() {
+        //given
+        Long userId = 1L;
+        Long amount = 50L;
+        UseUserPointRequestDto request = UseUserPointRequestDto.createdBy(userId, amount);
+
+        UserPoint existUserPoint = new UserPoint(userId, 100L, System.currentTimeMillis());
+
+        Mockito.when(userPointTable.selectById(userId))
+            .thenReturn(existUserPoint);
+
+        Mockito.when(userPointTable.insertOrUpdate(anyLong(), anyLong()))
+            .thenReturn(new UserPoint(userId, existUserPoint.point() - request.getAmount(), System.currentTimeMillis()));
+
+        //when
+        UserPoint updatedUserPoint = pointService.useUserPoint(request);
+
+        //then
+        assertThat(updatedUserPoint)
+            .extracting("id", "point")
+            .contains(userId, existUserPoint.point() - request.getAmount());
+
+    }
+
+    @Test
+    void 사용후_포인트가_최소_포인트보다_작으면_에러가_발생한다() {
+        //given
+        Long userId = 1L;
+        Long amount = 150L;
+        UseUserPointRequestDto request = UseUserPointRequestDto.createdBy(userId, amount);
+
+        UserPoint existUserPoint = new UserPoint(userId, 100L, System.currentTimeMillis());
+
+        Mockito.when(userPointTable.selectById(userId))
+            .thenReturn(existUserPoint);
+
+        //when
+        RuntimeException runtimeException = assertThrows(RuntimeException.class, () -> pointService.useUserPoint(request));
+
+        //then
+        assertThat(runtimeException.getMessage())
+            .isEqualTo("잔액이 충분하지 않습니다.");
     }
 }
