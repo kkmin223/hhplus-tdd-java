@@ -156,7 +156,7 @@ class PointServiceTest {
         //given
         Long userId = 1L;
         Long amount = 50L;
-        UseUserPointRequestDto request = UseUserPointRequestDto.createdBy(userId, amount);
+        UseUserPointRequestDto request = UseUserPointRequestDto.createdBy(amount);
 
         UserPoint existUserPoint = new UserPoint(userId, 100L, System.currentTimeMillis());
 
@@ -167,7 +167,7 @@ class PointServiceTest {
             .thenReturn(new UserPoint(userId, existUserPoint.point() - request.getAmount(), System.currentTimeMillis()));
 
         //when
-        UserPoint updatedUserPoint = pointService.useUserPoint(request);
+        UserPoint updatedUserPoint = pointService.useUserPoint(userId, request);
 
         //then
         assertThat(updatedUserPoint)
@@ -181,7 +181,7 @@ class PointServiceTest {
         //given
         Long userId = 1L;
         Long amount = 150L;
-        UseUserPointRequestDto request = UseUserPointRequestDto.createdBy(userId, amount);
+        UseUserPointRequestDto request = UseUserPointRequestDto.createdBy(amount);
 
         UserPoint existUserPoint = new UserPoint(userId, 100L, System.currentTimeMillis());
 
@@ -189,7 +189,7 @@ class PointServiceTest {
             .thenReturn(existUserPoint);
 
         //when
-        RuntimeException runtimeException = assertThrows(RuntimeException.class, () -> pointService.useUserPoint(request));
+        RuntimeException runtimeException = assertThrows(RuntimeException.class, () -> pointService.useUserPoint(userId, request));
 
         //then
         assertThat(runtimeException.getMessage())

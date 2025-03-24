@@ -6,12 +6,14 @@ import io.hhplus.tdd.database.UserPointTable;
 import io.hhplus.tdd.dto.point.ChargeUserPointRequestDto;
 import io.hhplus.tdd.dto.point.UseUserPointRequestDto;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 @AllArgsConstructor
+@Slf4j
 public class PointService {
 
     private final PointLimit pointLimit;
@@ -33,7 +35,12 @@ public class PointService {
 
         UserPoint updatedUserPoint = userPointTable.insertOrUpdate(id, updatePoint);
 
-        pointHistoryTable.insert(id, request.getAmount(), TransactionType.CHARGE, updatedUserPoint.updateMillis());
+        try {
+            pointHistoryTable.insert(id, request.getAmount(), TransactionType.CHARGE, updatedUserPoint.updateMillis());
+        } catch (Exception ex) {
+            log.error("chargeUserPoint 히스토리 추가 실패: " + ex.getMessage());
+        }
+
 
         return updatedUserPoint;
     }
@@ -51,17 +58,22 @@ public class PointService {
         return userPoint;
     }
 
-    public UserPoint useUserPoint(UseUserPointRequestDto request) {
+    public UserPoint useUserPoint(Long id, UseUserPointRequestDto request) {
 
-        UserPoint userPoint = userPointTable.selectById(request.getId());
+        UserPoint userPoint = userPointTable.selectById(id);
 
         if (userPoint.point() - request.getAmount() < pointLimit.min()) {
             throw new RuntimeException("잔액이 충분하지 않습니다.");
         }
 
-        UserPoint updatedUserPoint = userPointTable.insertOrUpdate(request.getId(), userPoint.point() - request.getAmount());
+        UserPoint updatedUserPoint = userPointTable.insertOrUpdate(id, userPoint.point() - request.getAmount());
 
-        pointHistoryTable.insert(request.getId(), request.getAmount(), TransactionType.CHARGE, updatedUserPoint.updateMillis());
+        try {
+            pointHistoryTable.insert(id, request.getAmount(), TransactionType.USE, updatedUserPoint.updateMillis());
+        } catch (Exception ex) {
+            log.error("useUserPoint 히스토리 추가 실패: " + ex.getMessage());
+        }
+
 
         return updatedUserPoint;
     }

@@ -1,6 +1,7 @@
 package io.hhplus.tdd.point;
 
 import io.hhplus.tdd.dto.point.ChargeUserPointRequestDto;
+import io.hhplus.tdd.dto.point.UseUserPointRequestDto;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,8 +54,8 @@ public class PointController {
     @PatchMapping("{id}/use")
     public UserPoint use(
         @PathVariable long id,
-        @RequestBody long amount
+        @RequestBody UseUserPointRequestDto request
     ) {
-        return new UserPoint(0, 0, 0);
+        return pointService.useUserPoint(id, request);
     }
 }

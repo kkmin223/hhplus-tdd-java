@@ -7,12 +7,10 @@ import lombok.*;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 public class UseUserPointRequestDto {
-    private Long id;
     private Long amount;
 
-    public static UseUserPointRequestDto createdBy(Long id, Long amount) {
+    public static UseUserPointRequestDto createdBy(Long amount) {
         return UseUserPointRequestDto.builder()
-            .id(id)
             .amount(amount)
             .build();
     }
