@@ -5,6 +5,7 @@ import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
 import io.hhplus.tdd.dto.point.ChargeUserPointRequestDto;
 import io.hhplus.tdd.dto.point.UseUserPointRequestDto;
+import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -194,5 +195,38 @@ class PointServiceTest {
         //then
         assertThat(runtimeException.getMessage())
             .isEqualTo("잔액이 충분하지 않습니다.");
+    }
+
+    @Test
+    void 포인트_히스토리를_조회한다() {
+        // given
+        Long userId = 1L;
+        PointHistory pointHistory = new PointHistory(1L, userId, 100, TransactionType.CHARGE, System.currentTimeMillis());
+
+        Mockito.when(pointHistoryTable.selectAllByUserId(userId))
+            .thenReturn(List.of(pointHistory));
+
+        // when
+        List<PointHistory> pointHistories = pointService.listPointHistory(userId);
+
+        // then
+        assertThat(pointHistories).hasSize(1)
+            .extracting("id", "userId", "amount", "type")
+            .contains(new Tuple(1L, userId, pointHistory.amount(), pointHistory.type()));
+    }
+
+    @Test
+    void 포인트_히스토리가_없는_유저를_조회하면_에러가_발생한다() {
+        // given
+        Long userId = 1L;
+        Mockito.when(pointHistoryTable.selectAllByUserId(userId))
+            .thenReturn(new ArrayList<>());
+
+        // when
+        RuntimeException runtimeException = assertThrows(RuntimeException.class, () -> pointService.listPointHistory(userId));
+
+        // then
+        assertThat(runtimeException.getMessage())
+            .isEqualTo("유효하지 않은 유저입니다");
     }
 }

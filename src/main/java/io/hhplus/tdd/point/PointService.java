@@ -77,4 +77,14 @@ public class PointService {
 
         return updatedUserPoint;
     }
+
+    public List<PointHistory> listPointHistory(Long id) {
+        List<PointHistory> pointHistories = pointHistoryTable.selectAllByUserId(id);
+
+        if (pointHistories.isEmpty()) {
+            throw new RuntimeException("유효하지 않은 유저입니다");
+        }
+
+        return pointHistories;
+    }
 }
