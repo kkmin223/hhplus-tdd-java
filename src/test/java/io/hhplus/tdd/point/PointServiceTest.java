@@ -65,7 +65,7 @@ class PointServiceTest {
 
         Mockito.when(pointLimit.max()).thenReturn(100L);
 
-        //when
+        //when & then
         assertThatThrownBy(() -> pointService.chargeUserPoint(userId, request))
             .isInstanceOf(RuntimeException.class);
     }
@@ -82,7 +82,7 @@ class PointServiceTest {
 
         Mockito.when(pointLimit.max()).thenReturn(100L);
 
-        //when
+        //when & then
         assertThatThrownBy(() -> pointService.chargeUserPoint(userId, request))
             .isInstanceOf(RuntimeException.class);
     }
@@ -105,7 +105,7 @@ class PointServiceTest {
 
         Mockito.when(pointLimit.max()).thenReturn(100L);
 
-        //when
+        //when & then
         assertThatThrownBy(() -> pointService.chargeUserPoint(userId, request))
             .isInstanceOf(RuntimeException.class);
     }
