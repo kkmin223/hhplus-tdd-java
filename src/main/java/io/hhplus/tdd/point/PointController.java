@@ -21,9 +21,9 @@ public class PointController {
      */
     @GetMapping("{id}")
     public UserPoint point(
-            @PathVariable long id
+        @PathVariable long id
     ) {
-        return new UserPoint(0, 0, 0);
+        return pointService.getUserPoint(id);
     }
 
     /**
@@ -31,7 +31,7 @@ public class PointController {
      */
     @GetMapping("{id}/histories")
     public List<PointHistory> history(
-            @PathVariable long id
+        @PathVariable long id
     ) {
         return List.of();
     }
@@ -43,7 +43,7 @@ public class PointController {
     public UserPoint charge(
         @PathVariable long id,
         @RequestBody ChargeUserPointRequestDto request
-        ) {
+    ) {
         return pointService.chargeUserPoint(id, request);
     }
 
@@ -52,8 +52,8 @@ public class PointController {
      */
     @PatchMapping("{id}/use")
     public UserPoint use(
-            @PathVariable long id,
-            @RequestBody long amount
+        @PathVariable long id,
+        @RequestBody long amount
     ) {
         return new UserPoint(0, 0, 0);
     }

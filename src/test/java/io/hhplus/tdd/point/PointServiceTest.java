@@ -11,8 +11,12 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 
@@ -108,5 +112,41 @@ class PointServiceTest {
         //when & then
         assertThatThrownBy(() -> pointService.chargeUserPoint(userId, request))
             .isInstanceOf(RuntimeException.class);
+    }
+
+    @Test
+    void 포인트를_조회한다() {
+        //given
+        Long userId = 1L;
+        UserPoint existUserPoint = new UserPoint(userId, 10L, System.currentTimeMillis());
+
+        Mockito.when(pointHistoryTable.selectAllByUserId(userId))
+            .thenReturn(List.of(new PointHistory(1, userId, existUserPoint.point(), TransactionType.CHARGE, existUserPoint.updateMillis())));
+
+        Mockito.when(userPointTable.selectById(userId))
+            .thenReturn(existUserPoint);
+
+        //when
+        UserPoint result = pointService.getUserPoint(userId);
+
+        //then
+        assertThat(result)
+            .extracting("id", "point", "updateMillis")
+            .contains(existUserPoint.id(), existUserPoint.point(), existUserPoint.updateMillis());
+    }
+
+    @Test
+    void 포인트_히스토리_내역이_없는_유저를_조회하면_실패한다() {
+        //given
+        Long userId = 1L;
+
+        Mockito.when(pointHistoryTable.selectAllByUserId(userId))
+            .thenReturn(new ArrayList<>());
+
+        //when
+        RuntimeException runtimeException = assertThrows(RuntimeException.class, () -> pointService.getUserPoint(userId));
+
+        assertThat(runtimeException.getMessage())
+            .isEqualTo("유효하지 않은 유저입니다.");
     }
 }

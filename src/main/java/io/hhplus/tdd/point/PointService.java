@@ -7,6 +7,8 @@ import io.hhplus.tdd.dto.point.ChargeUserPointRequestDto;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @AllArgsConstructor
 public class PointService {
@@ -33,5 +35,18 @@ public class PointService {
         pointHistoryTable.insert(id, request.getAmount(), TransactionType.CHARGE, updatedUserPoint.updateMillis());
 
         return updatedUserPoint;
+    }
+
+    public UserPoint getUserPoint(Long id) {
+
+        List<PointHistory> pointHistoryList = pointHistoryTable.selectAllByUserId(id);
+
+        if (pointHistoryList.isEmpty()) {
+            throw new RuntimeException("유효하지 않은 유저입니다.");
+        }
+
+        UserPoint userPoint = userPointTable.selectById(id);
+
+        return userPoint;
     }
 }
