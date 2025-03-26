@@ -66,7 +66,7 @@ public class PointServiceIntegrationTest {
 
         // then
         assertThat(runtimeException.getMessage())
-            .isEqualTo("최대 포인트를 넘는 금액은 충전할 수 없습니다.");
+            .isEqualTo("포인트는 최대 포인트 정책 금액보다 클 수 없습니다.");
     }
 
     @Test
@@ -84,7 +84,7 @@ public class PointServiceIntegrationTest {
 
         // then
         assertThat(runtimeException.getMessage())
-            .isEqualTo("최대 포인트를 넘어서 충전할 수 없습니다.");
+            .isEqualTo("포인트는 최대 포인트 정책 금액보다 클 수 없습니다.");
     }
 
     @Test
@@ -147,7 +147,7 @@ public class PointServiceIntegrationTest {
 
         // then
         assertThat(runtimeException.getMessage())
-            .isEqualTo("잔액이 충분하지 않습니다.");
+            .isEqualTo("포인트는 최소 포인트 정책 금액보다 작을 수 없습니다.");
     }
 
     @Test

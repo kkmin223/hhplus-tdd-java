@@ -51,7 +51,6 @@ class PointServiceTest {
         Mockito.when(pointHistoryTable.insert(anyLong(), anyLong(), any(), anyLong()))
             .thenReturn(new PointHistory(1, userId, request.getAmount(), TransactionType.CHARGE, System.currentTimeMillis()));
 
-        Mockito.when(pointLimitChecker.checkPointLimit(anyLong())).thenReturn(true);
         // when
         UserPoint result = pointService.chargeUserPoint(userId, request);
 
@@ -112,8 +111,7 @@ class PointServiceTest {
         Mockito.when(userPointTable.insertOrUpdate(anyLong(), anyLong()))
             .thenReturn(new UserPoint(userId, existUserPoint.point() - request.getAmount(), System.currentTimeMillis()));
 
-        Mockito.when(pointLimitChecker.checkPointLimit(anyLong())).thenReturn(true);
-        //when
+      //when
         UserPoint updatedUserPoint = pointService.useUserPoint(userId, request);
 
         //then
@@ -121,26 +119,6 @@ class PointServiceTest {
             .extracting("id", "point")
             .contains(userId, existUserPoint.point() - request.getAmount());
 
-    }
-
-    @Test
-    void 사용후_포인트가_최소_포인트보다_작으면_에러가_발생한다() {
-        //given
-        Long userId = 1L;
-        Long amount = 150L;
-        UseUserPointRequestDto request = UseUserPointRequestDto.createdBy(amount);
-
-        UserPoint existUserPoint = new UserPoint(userId, 100L, System.currentTimeMillis());
-
-        Mockito.when(userPointTable.selectById(userId))
-            .thenReturn(existUserPoint);
-
-        //when
-        RuntimeException runtimeException = assertThrows(RuntimeException.class, () -> pointService.useUserPoint(userId, request));
-
-        //then
-        assertThat(runtimeException.getMessage())
-            .isEqualTo("잔액이 충분하지 않습니다.");
     }
 
     @Test
