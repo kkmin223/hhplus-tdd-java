@@ -2,9 +2,12 @@ package io.hhplus.tdd.point;
 
 import io.hhplus.tdd.dto.point.ChargeUserPointRequestDto;
 import io.hhplus.tdd.dto.point.UseUserPointRequestDto;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,6 +15,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/point")
 @AllArgsConstructor
+@Validated
 public class PointController {
 
     private static final Logger log = LoggerFactory.getLogger(PointController.class);
@@ -22,7 +26,7 @@ public class PointController {
      */
     @GetMapping("{id}")
     public UserPoint point(
-        @PathVariable long id
+        @PathVariable @Positive(message = "유저 Id는 양수여야 합니다.") long id
     ) {
         return pointService.getUserPoint(id);
     }
@@ -32,7 +36,7 @@ public class PointController {
      */
     @GetMapping("{id}/histories")
     public List<PointHistory> history(
-        @PathVariable long id
+        @PathVariable @Positive(message = "유저 Id는 양수여야 합니다.") long id
     ) {
         return pointService.listPointHistory(id);
     }
@@ -42,8 +46,8 @@ public class PointController {
      */
     @PatchMapping("{id}/charge")
     public UserPoint charge(
-        @PathVariable long id,
-        @RequestBody ChargeUserPointRequestDto request
+        @PathVariable @Positive(message = "유저 Id는 양수여야 합니다.") long id,
+        @Valid @RequestBody ChargeUserPointRequestDto request
     ) {
         return pointService.chargeUserPoint(id, request);
     }
@@ -53,8 +57,8 @@ public class PointController {
      */
     @PatchMapping("{id}/use")
     public UserPoint use(
-        @PathVariable long id,
-        @RequestBody UseUserPointRequestDto request
+        @PathVariable @Positive(message = "유저 Id는 양수여야 합니다.") long id,
+        @Valid @RequestBody UseUserPointRequestDto request
     ) {
         return pointService.useUserPoint(id, request);
     }
