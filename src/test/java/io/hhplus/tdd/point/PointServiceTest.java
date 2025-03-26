@@ -4,6 +4,7 @@ import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
 import io.hhplus.tdd.dto.point.ChargeUserPointRequestDto;
 import io.hhplus.tdd.dto.point.UseUserPointRequestDto;
+import io.hhplus.tdd.lock.UserLockManager;
 import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -35,6 +37,9 @@ class PointServiceTest {
     @Mock
     private PointLimitChecker pointLimitChecker;
 
+    @Mock
+    private UserLockManager userLockManager;
+
     @Test
     void 포인트충전_테스트() {
         // given
@@ -50,6 +55,9 @@ class PointServiceTest {
 
         Mockito.when(pointHistoryTable.insert(anyLong(), anyLong(), any(), anyLong()))
             .thenReturn(new PointHistory(1, userId, request.getAmount(), TransactionType.CHARGE, System.currentTimeMillis()));
+
+        Mockito.when(userLockManager.getUserLock(userId))
+            .thenReturn(new ReentrantLock());
 
         // when
         UserPoint result = pointService.chargeUserPoint(userId, request);
@@ -111,7 +119,10 @@ class PointServiceTest {
         Mockito.when(userPointTable.insertOrUpdate(anyLong(), anyLong()))
             .thenReturn(new UserPoint(userId, existUserPoint.point() - request.getAmount(), System.currentTimeMillis()));
 
-      //when
+        Mockito.when(userLockManager.getUserLock(userId))
+            .thenReturn(new ReentrantLock());
+
+        //when
         UserPoint updatedUserPoint = pointService.useUserPoint(userId, request);
 
         //then
