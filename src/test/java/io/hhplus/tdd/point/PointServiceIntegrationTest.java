@@ -1,17 +1,19 @@
 package io.hhplus.tdd.point;
 
 import io.hhplus.tdd.config.PointLimit;
-import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
 import io.hhplus.tdd.dto.point.ChargeUserPointRequestDto;
 import io.hhplus.tdd.dto.point.UseUserPointRequestDto;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
@@ -27,13 +29,7 @@ public class PointServiceIntegrationTest {
     private PointService pointService;
 
     @Autowired
-    private PointHistoryTable pointHistoryTable;
-
-    @Autowired
     private UserPointTable userPointTable;
-
-    @Autowired
-    private PointLimitChecker pointLimitChecker;
 
     @Autowired
     private PointLimit pointLimit;
@@ -202,4 +198,152 @@ public class PointServiceIntegrationTest {
             .isEqualTo("유효하지 않은 유저입니다");
     }
 
+    @Test
+    void 동일한_유저가_N번_포인트를_충전하면_N번의_포인트가_충전된다() throws InterruptedException {
+        // given
+        Long userId = 1L;
+        Long amount = 100L;
+        int threadCount = 5;
+        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+
+        // when
+        for (int i = 0; i < threadCount; i++) {
+            executorService.submit(() -> {
+                try {
+                    ChargeUserPointRequestDto request = new ChargeUserPointRequestDto(amount);
+                    pointService.chargeUserPoint(userId, request);
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+        latch.await();
+
+        // then
+        UserPoint userPoint = pointService.getUserPoint(userId);
+
+        assertThat(userPoint)
+            .extracting("id", "point")
+            .contains(userId, amount * threadCount);
+    }
+
+    @Test
+    void 동일한_유저가_N번_포인트를_충전할때_최대_포인트를_넘으면_이후_충전에_대해서_포인트_충전_불가_에러가_발생한다() throws InterruptedException {
+        // given
+        Long userId = 1L;
+        int threadCount = 5;
+        int expectFailCount = 3;
+
+        Long amount = pointLimit.max() / (threadCount - expectFailCount);
+        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+
+        AtomicInteger successCount = new AtomicInteger();
+        AtomicInteger failCount = new AtomicInteger();
+
+        // when
+        for (int i = 0; i < threadCount; i++) {
+            executorService.submit(() -> {
+                try {
+                    ChargeUserPointRequestDto request = new ChargeUserPointRequestDto(amount);
+                    pointService.chargeUserPoint(userId, request);
+                    successCount.getAndIncrement();
+                } catch (Exception ex) {
+                    failCount.getAndIncrement();
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+        latch.await();
+
+        // then
+        UserPoint userPoint = pointService.getUserPoint(userId);
+
+        assertThat(successCount.get()).isEqualTo(threadCount - expectFailCount);
+        assertThat(failCount.get()).isEqualTo(expectFailCount);
+
+        assertThat(userPoint)
+            .extracting("id", "point")
+            .contains(userId, amount * successCount.get());
+    }
+
+    @Test
+    void 동일한_유저가_N번_포인트를_사용하면_N번의_포인트가_사용된다() throws InterruptedException {
+        // given
+        Long userId = 1L;
+        Long existPoint = 1000L;
+
+        userPointTable.insertOrUpdate(userId, existPoint);
+        Long amount = 100L;
+        int threadCount = 5;
+        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+
+        // when
+        for (int i = 0; i < threadCount; i++) {
+            executorService.submit(() -> {
+                try {
+                    UseUserPointRequestDto request = UseUserPointRequestDto.createdBy(amount);
+                    pointService.useUserPoint(userId, request);
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+        latch.await();
+
+        // then
+        UserPoint userPoint = pointService.getUserPoint(userId);
+
+        assertThat(userPoint)
+            .extracting("id", "point")
+            .contains(userId, existPoint - amount * threadCount);
+    }
+
+    @Test
+    void 동일한_유저가_N번_포인트를_사용할때_잔액이_최소_포인트보다_작으면_이후_사용에_대해서_포인트_사용_불가_에러가_발생한다() throws InterruptedException {
+        // given
+        Long userId = 1L;
+        int threadCount = 5;
+        int expectFailCount = 3;
+        Long existPoint = 1000L;
+
+        userPointTable.insertOrUpdate(userId, existPoint);
+
+
+        Long amount = existPoint / (threadCount - expectFailCount);
+        ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+
+        AtomicInteger successCount = new AtomicInteger();
+        AtomicInteger failCount = new AtomicInteger();
+
+        // when
+        for (int i = 0; i < threadCount; i++) {
+            executorService.submit(() -> {
+                try {
+                    UseUserPointRequestDto request = UseUserPointRequestDto.createdBy(amount);
+                    pointService.useUserPoint(userId, request);
+                    successCount.getAndIncrement();
+                } catch (Exception ex) {
+                    failCount.getAndIncrement();
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+        latch.await();
+
+        // then
+        UserPoint userPoint = pointService.getUserPoint(userId);
+
+        assertThat(successCount.get()).isEqualTo(threadCount - expectFailCount);
+        assertThat(failCount.get()).isEqualTo(expectFailCount);
+
+        assertThat(userPoint)
+            .extracting("id", "point")
+            .contains(userId, existPoint - (amount * successCount.get()));
+    }
 }
