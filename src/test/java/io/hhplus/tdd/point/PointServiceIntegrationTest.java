@@ -29,6 +29,9 @@ public class PointServiceIntegrationTest {
     private UserPointTable userPointTable;
 
     @Autowired
+    private PointLimitChecker pointLimitChecker;
+
+    @Autowired
     private PointLimit pointLimit;
 
     @BeforeEach
@@ -184,7 +187,7 @@ public class PointServiceIntegrationTest {
             .extracting("userId", "amount", "type")
             .containsExactlyInAnyOrder(
                 tuple(userId, chargeUserPointRequestDto.getAmount(), TransactionType.CHARGE)
-                ,tuple(userId, useUserPointRequestDto.getAmount(), TransactionType.USE)
+                , tuple(userId, useUserPointRequestDto.getAmount(), TransactionType.USE)
             );
     }
 

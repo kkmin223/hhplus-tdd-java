@@ -1,6 +1,5 @@
 package io.hhplus.tdd.point;
 
-import io.hhplus.tdd.config.PointLimit;
 import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
 import io.hhplus.tdd.dto.point.ChargeUserPointRequestDto;
@@ -16,20 +15,20 @@ import java.util.List;
 @Slf4j
 public class PointService {
 
-    private final PointLimit pointLimit;
     private final UserPointTable userPointTable;
     private final PointHistoryTable pointHistoryTable;
+    private final PointLimitChecker pointLimitChecker;
 
     public UserPoint chargeUserPoint(Long id, ChargeUserPointRequestDto request) {
 
-        if (pointLimit.max() < request.getAmount()) {
+        if (!pointLimitChecker.checkPointLimit(request.getAmount())) {
             throw new RuntimeException("최대 포인트를 넘는 금액은 충전할 수 없습니다.");
         }
 
         UserPoint userPoint = userPointTable.selectById(id);
 
-        Long updatePoint = userPoint.point() + request.getAmount();
-        if (pointLimit.max() < updatePoint) {
+        long updatePoint = userPoint.chargePoint(request.getAmount());
+        if (!pointLimitChecker.checkPointLimit(updatePoint)) {
             throw new RuntimeException("최대 포인트를 넘어서 충전할 수 없습니다.");
         }
 
@@ -61,12 +60,12 @@ public class PointService {
     public UserPoint useUserPoint(Long id, UseUserPointRequestDto request) {
 
         UserPoint userPoint = userPointTable.selectById(id);
-
-        if (userPoint.point() - request.getAmount() < pointLimit.min()) {
+        long updatePoint = userPoint.usePoint(request.getAmount());
+        if (!pointLimitChecker.checkPointLimit(updatePoint)) {
             throw new RuntimeException("잔액이 충분하지 않습니다.");
         }
 
-        UserPoint updatedUserPoint = userPointTable.insertOrUpdate(id, userPoint.point() - request.getAmount());
+        UserPoint updatedUserPoint = userPointTable.insertOrUpdate(id, updatePoint);
 
         try {
             pointHistoryTable.insert(id, request.getAmount(), TransactionType.USE, updatedUserPoint.updateMillis());
