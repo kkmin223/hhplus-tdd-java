@@ -27,10 +27,6 @@ public class UserPointTable {
         return userPoint;
     }
 
-    public void clear() {
-        this.table.clear();
-    }
-
     private void throttle(long millis) {
         try {
             TimeUnit.MILLISECONDS.sleep((long) (Math.random() * millis));

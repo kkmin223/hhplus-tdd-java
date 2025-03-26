@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.List;
 
@@ -17,6 +18,9 @@ import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
+@DirtiesContext(
+    classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD
+)
 public class PointServiceIntegrationTest {
 
     @Autowired
@@ -33,12 +37,6 @@ public class PointServiceIntegrationTest {
 
     @Autowired
     private PointLimit pointLimit;
-
-    @BeforeEach
-    void clearTable() {
-        userPointTable.clear();
-        pointHistoryTable.clear();
-    }
 
     @Test
     void 포인트를_충전하면_사용자의_포인트_현황을_반환한다() {

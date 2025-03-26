@@ -28,10 +28,6 @@ public class PointHistoryTable {
         return table.stream().filter(pointHistory -> pointHistory.userId() == userId).toList();
     }
 
-    public void clear() {
-        table.clear();
-    }
-
     private void throttle(long millis) {
         try {
             TimeUnit.MILLISECONDS.sleep((long) (Math.random() * millis));
