@@ -33,7 +33,7 @@ public class PointServiceIntegrationTest {
     private static Long userId = 0L;
 
     private static Long getUserId() {
-        return userId++;
+        return ++userId;
     }
 
     @Test
