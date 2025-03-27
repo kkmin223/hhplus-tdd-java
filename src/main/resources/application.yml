@@ -1,2 +1,6 @@
 spring:
   application.name: hhplus-tdd
+
+point-limit:
+  max: 100000
+  min: 0
