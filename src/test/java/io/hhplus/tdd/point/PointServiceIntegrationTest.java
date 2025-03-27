@@ -200,12 +200,14 @@ public class PointServiceIntegrationTest {
             .isEqualTo("유효하지 않은 유저입니다");
     }
 
+
+
     @Test
     void 동일한_유저가_N번_포인트를_충전하면_N번의_포인트가_충전된다() throws InterruptedException {
         // given
         Long userId = getUserId();
         Long amount = 100L;
-        int threadCount = 5;
+        int threadCount = 10;
         ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
 
@@ -234,7 +236,7 @@ public class PointServiceIntegrationTest {
     void 동일한_유저가_N번_포인트를_충전할때_최대_포인트를_넘으면_이후_충전에_대해서_포인트_충전_불가_에러가_발생한다() throws InterruptedException {
         // given
         Long userId = getUserId();
-        int threadCount = 5;
+        int threadCount = 10;
         int expectFailCount = 3;
 
         Long amount = pointLimit.max() / (threadCount - expectFailCount);
@@ -275,11 +277,11 @@ public class PointServiceIntegrationTest {
     void 동일한_유저가_N번_포인트를_사용하면_N번의_포인트가_사용된다() throws InterruptedException {
         // given
         Long userId = getUserId();
-        Long existPoint = 1000L;
 
-        userPointTable.insertOrUpdate(userId, existPoint);
         Long amount = 100L;
-        int threadCount = 5;
+        int threadCount = 10;
+        Long existPoint = threadCount * amount;
+        userPointTable.insertOrUpdate(userId, existPoint);
         ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
 
@@ -308,7 +310,7 @@ public class PointServiceIntegrationTest {
     void 동일한_유저가_N번_포인트를_사용할때_잔액이_최소_포인트보다_작으면_이후_사용에_대해서_포인트_사용_불가_에러가_발생한다() throws InterruptedException {
         // given
         Long userId = getUserId();
-        int threadCount = 5;
+        int threadCount = 10;
         int expectFailCount = 3;
         Long existPoint = 1000L;
 
