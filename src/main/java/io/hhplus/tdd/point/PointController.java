@@ -26,7 +26,7 @@ public class PointController {
      */
     @GetMapping("{id}")
     public UserPoint point(
-        @PathVariable @Positive(message = "유저 Id는 양수여야 합니다.") long id
+        @PathVariable(value = "id") @Positive(message = "유저 Id는 양수여야 합니다.") long id
     ) {
         return pointService.getUserPoint(id);
     }

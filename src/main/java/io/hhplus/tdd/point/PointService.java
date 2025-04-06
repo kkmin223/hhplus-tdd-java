@@ -4,11 +4,13 @@ import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
 import io.hhplus.tdd.dto.point.ChargeUserPointRequestDto;
 import io.hhplus.tdd.dto.point.UseUserPointRequestDto;
+import io.hhplus.tdd.lock.UserLockManager;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Service
 @AllArgsConstructor
@@ -18,6 +20,7 @@ public class PointService {
     private final UserPointTable userPointTable;
     private final PointHistoryTable pointHistoryTable;
     private final PointLimitChecker pointLimitChecker;
+    private final UserLockManager userLockManager;
 
     /**
      * 포인트 충전 <br>
@@ -36,19 +39,28 @@ public class PointService {
 
         pointLimitChecker.checkMaxPointLimit(request.getAmount());
 
-        UserPoint userPoint = userPointTable.selectById(id);
-
-        long updatePoint = userPoint.chargePoint(request.getAmount());
-        pointLimitChecker.checkMaxPointLimit(updatePoint);
-
-        UserPoint updatedUserPoint = userPointTable.insertOrUpdate(id, updatePoint);
-
+        ReentrantLock userLock = userLockManager.getUserLock(id);
+        userLock.lock();
+        UserPoint updatedUserPoint;
         try {
-            pointHistoryTable.insert(id, request.getAmount(), TransactionType.CHARGE, updatedUserPoint.updateMillis());
-        } catch (Exception ex) {
-            log.error("chargeUserPoint 히스토리 추가 실패: " + ex.getMessage());
-        }
+            UserPoint userPoint = userPointTable.selectById(id);
 
+            long updatePoint = userPoint.chargePoint(request.getAmount());
+            pointLimitChecker.checkMaxPointLimit(updatePoint);
+
+            updatedUserPoint = userPointTable.insertOrUpdate(id, updatePoint);
+
+            try {
+                pointHistoryTable.insert(id, request.getAmount(), TransactionType.CHARGE, updatedUserPoint.updateMillis());
+            } catch (Exception ex) {
+                log.error("chargeUserPoint 히스토리 추가 실패: " + ex.getMessage());
+            }
+
+        } catch (Exception ex) {
+            throw ex;
+        } finally {
+            userLock.unlock();
+        }
 
         return updatedUserPoint;
     }
@@ -87,19 +99,28 @@ public class PointService {
      */
     public UserPoint useUserPoint(Long id, UseUserPointRequestDto request) {
 
-        UserPoint userPoint = userPointTable.selectById(id);
-        long updatePoint = userPoint.usePoint(request.getAmount());
-
-        pointLimitChecker.checkMinPointLimit(updatePoint);
-
-        UserPoint updatedUserPoint = userPointTable.insertOrUpdate(id, updatePoint);
+        ReentrantLock userLock = userLockManager.getUserLock(id);
+        userLock.lock();
+        UserPoint updatedUserPoint;
 
         try {
-            pointHistoryTable.insert(id, request.getAmount(), TransactionType.USE, updatedUserPoint.updateMillis());
-        } catch (Exception ex) {
-            log.error("useUserPoint 히스토리 추가 실패: " + ex.getMessage());
-        }
+            UserPoint userPoint = userPointTable.selectById(id);
+            long updatePoint = userPoint.usePoint(request.getAmount());
 
+            pointLimitChecker.checkMinPointLimit(updatePoint);
+
+            updatedUserPoint = userPointTable.insertOrUpdate(id, updatePoint);
+
+            try {
+                pointHistoryTable.insert(id, request.getAmount(), TransactionType.USE, updatedUserPoint.updateMillis());
+            } catch (Exception ex) {
+                log.error("useUserPoint 히스토리 추가 실패: " + ex.getMessage());
+            }
+        } catch (Exception ex) {
+            throw ex;
+        } finally {
+            userLock.unlock();
+        }
 
         return updatedUserPoint;
     }

@@ -25,12 +25,12 @@ class ApiControllerAdvice {
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<ErrorResponse> handleConstraintViolationException(Exception e) {
+    public ResponseEntity<ErrorResponse> handleConstraintViolationException(ConstraintViolationException e) {
         return ResponseEntity.status(400).body(new ErrorResponse("400", e.getMessage()));
     }
 
     @ExceptionHandler(value = RuntimeException.class)
-    public ResponseEntity<ErrorResponse> handleRuntimeException(Exception e) {
+    public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException e) {
         return ResponseEntity.status(500).body(new ErrorResponse("500", e.getMessage()));
     }
 
